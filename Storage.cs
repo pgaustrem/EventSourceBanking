@@ -1,28 +1,43 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
+using EventSource.Events;
+using Microsoft.Identity.Client.Extensions.Msal;
+using NEventStore;
 
 namespace EventSource
 {
-    public static class Storage
+    public interface IStorage
     {
-        public async static Task Save(BankAccount weather) 
+        Task<string> Get(Guid accountId);
+        Task Save(Guid accountId);
+    }
+
+    public class Storage(IStoreEvents events) : IStorage
+    {
+        private readonly IStoreEvents _eventStore = events;
+
+        public async Task Save(Guid accountId)
         {
-            string fileName = "persist.json";
-            await using FileStream createStream = File.OpenWrite(fileName);
-            await JsonSerializer.SerializeAsync(createStream, weather);
+            using (var stream = _eventStore.CreateStream(accountId))
+            {
+                var someEvent = new SomethingHappened() { Seed = Random.Shared.Next() };                
+                stream.Add(new EventMessage { Body = someEvent});
+                stream.CommitChanges(Guid.NewGuid());
+            }
         }
 
-        public async static Task<BankAccount?> Get()
+        public async Task<string> Get(Guid accountId)
         {
-            BankAccount? bankAccount;
-            string fileName = "persist.json";
-            using FileStream openStream = File.OpenRead(fileName);
-            try
+            var returnValues = new StringBuilder();
+            using(var stream = _eventStore.OpenStream(accountId))
             {
-                bankAccount = await JsonSerializer.DeserializeAsync<BankAccount>(openStream);
+                foreach (var @event in stream.CommittedEvents) 
+                {
+                    returnValues.AppendLine(@event.Body.ToString());
+                } 
             }
-            catch(Exception) { return null; }
-            
-            return bankAccount;
+
+            return returnValues.ToString();
         }
     }
 }

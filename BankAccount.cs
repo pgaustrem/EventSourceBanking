@@ -1,7 +1,10 @@
+using NEventStore.Domain.Core;
+
 namespace EventSource
 {
-    public class BankAccount
+    public class BankAccount : AggregateBase
     {
+        public Guid Id { get; private set; } = Guid.NewGuid();
         public DateTime LastLogin { get; set; } = DateTime.Now;
 
         public int Balance { get; set; }

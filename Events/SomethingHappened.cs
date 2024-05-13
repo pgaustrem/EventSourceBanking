@@ -3,12 +3,13 @@
 namespace EventSource.Events
 {
 
-    public class SomethingHappened 
+    public class AccountCreated 
     {
-        public SomethingHappened()
-        {
-        }
+        public Guid Id { get; set; }
+    }
 
-        public int Seed { get; set; }
+    public class AccountCredited 
+    {
+        public int Amount { get; set; }
     }
 }

@@ -1,43 +1,44 @@
 ﻿using System.Text;
 using System.Text.Json;
+using EventSource.Commands;
 using EventSource.Events;
+using Microsoft.Identity.Client;
 using Microsoft.Identity.Client.Extensions.Msal;
 using NEventStore;
+using NEventStore.Domain.Persistence;
 
 namespace EventSource
 {
     public interface IStorage
     {
-        Task<string> Get(Guid accountId);
-        Task Save(Guid accountId);
+        Task<BankAccount> Get(Guid accountId);
+        Task Handle(CreditAccountCommand command);
+        Task Handle(CreateAccountCommand command);
     }
 
-    public class Storage(IStoreEvents events) : IStorage
+    public class Storage(IRepository repository) : IStorage
     {
-        private readonly IStoreEvents _eventStore = events;
+        private readonly IRepository _repository = repository;
 
-        public async Task Save(Guid accountId)
+        public async Task Handle(CreateAccountCommand command)
         {
-            using (var stream = _eventStore.CreateStream(accountId))
-            {
-                var someEvent = new SomethingHappened() { Seed = Random.Shared.Next() };                
-                stream.Add(new EventMessage { Body = someEvent});
-                stream.CommitChanges(Guid.NewGuid());
-            }
+            var aggregateRoot = new BankAccount(command.Id);
+            
+            _repository.Save(aggregateRoot, Guid.NewGuid());
         }
 
-        public async Task<string> Get(Guid accountId)
+        public async Task Handle(CreditAccountCommand command)
         {
-            var returnValues = new StringBuilder();
-            using(var stream = _eventStore.OpenStream(accountId))
-            {
-                foreach (var @event in stream.CommittedEvents) 
-                {
-                    returnValues.AppendLine(@event.Body.ToString());
-                } 
-            }
+            var aggregateRoot = _repository.GetById<BankAccount>(command.Id);
+            aggregateRoot.Credit(100);
+            _repository.Save(aggregateRoot, Guid.NewGuid());
+        }
 
-            return returnValues.ToString();
+        public async Task<BankAccount> Get(Guid accountId)
+        {            
+            var aggregateRoot = _repository.GetById<BankAccount>(accountId);
+
+            return aggregateRoot;
         }
     }
 }

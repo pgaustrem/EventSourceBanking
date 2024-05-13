@@ -1,6 +1,10 @@
 using EventSource;
 using EventSource.Infrastructure;
 using NEventStore;
+using NEventStore.Domain.Persistence.EventStore;
+using NEventStore.Domain.Persistence;
+using NEventStore.Domain.Core;
+using NEventStore.Domain;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +15,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton(typeof(IStoreEvents), NEventStoreRegistry.Setup());
+builder.Services.AddScoped<IConstructAggregates, AggregateFactory>();
+builder.Services.AddScoped<IDetectConflicts, ConflictDetector>();
+builder.Services.AddScoped<IRepository, EventStoreRepository>();
 builder.Services.AddScoped<IStorage, Storage>();
 var app = builder.Build();
 

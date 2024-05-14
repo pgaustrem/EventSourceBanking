@@ -1,6 +1,4 @@
-using System.Runtime.InteropServices.Marshalling;
 using EventSource.Events;
-using Microsoft.AspNetCore.Mvc;
 using NEventStore.Domain.Core;
 
 namespace EventSource
@@ -17,7 +15,7 @@ namespace EventSource
 
         public BankAccount(Guid id) : base(new ConventionEventRouter(throwOnApplyNotFound: true))
         {
-            Id = id;
+            Id = id;  
             RaiseEvent(new AccountCreated { Id = id });
         }
 

@@ -3,6 +3,7 @@ using NEventStore;
 using NEventStore.Domain.Persistence;
 using NEventStore.Domain;
 using NEventStore.Serialization.Json;
+using NEventStore.Persistence.Sql.SqlDialects;
 
 namespace EventSource.Infrastructure
 {
@@ -18,7 +19,8 @@ namespace EventSource.Infrastructure
 
             return Wireup.Init()
               .WithLoggerFactory(loggerFactory)
-              .UsingInMemoryPersistence()
+              .UsingSqlPersistence(Microsoft.Data.SqlClient.SqlClientFactory.Instance, @"Data Source=.\sqlexpress; Initial Catalog=NEventStore; Integrated Security=True; TrustServerCertificate=true")
+              .WithDialect(new MsSqlDialect())
               .InitializeStorageEngine()
               .UsingJsonSerialization()                      
               .Build();

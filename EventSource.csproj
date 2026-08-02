@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="EventSource.Tests/**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="NEventStore" Version="9.1.1" />
     <PackageReference Include="NEventStore.Domain" Version="9.1.1" />
     <PackageReference Include="NEventStore.Persistence.Sql" Version="9.2.0" />

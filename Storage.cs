@@ -1,28 +1,44 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
+using EventSource.Commands;
+using EventSource.Events;
+using Microsoft.Identity.Client;
+using Microsoft.Identity.Client.Extensions.Msal;
+using NEventStore;
+using NEventStore.Domain.Persistence;
 
 namespace EventSource
 {
-    public static class Storage
+    public interface IStorage
     {
-        public async static Task Save(BankAccount weather) 
+        Task<BankAccount> Get(Guid accountId);
+        Task Handle(CreditAccountCommand command);
+        Task Handle(CreateAccountCommand command);
+    }
+
+    public class Storage(IRepository repository) : IStorage
+    {
+        private readonly IRepository _repository = repository;
+
+        public async Task Handle(CreateAccountCommand command)
         {
-            string fileName = "persist.json";
-            await using FileStream createStream = File.OpenWrite(fileName);
-            await JsonSerializer.SerializeAsync(createStream, weather);
+            var aggregateRoot = new BankAccount(command.Id);
+            
+            _repository.Save(aggregateRoot, Guid.NewGuid());
         }
 
-        public async static Task<BankAccount?> Get()
+        public async Task Handle(CreditAccountCommand command)
         {
-            BankAccount? bankAccount;
-            string fileName = "persist.json";
-            using FileStream openStream = File.OpenRead(fileName);
-            try
-            {
-                bankAccount = await JsonSerializer.DeserializeAsync<BankAccount>(openStream);
-            }
-            catch(Exception) { return null; }
-            
-            return bankAccount;
+            var aggregateRoot = _repository.GetById<BankAccount>(command.Id);
+            aggregateRoot.Credit(100);
+            _repository.Save(aggregateRoot, Guid.NewGuid());
+        }
+
+        public async Task<BankAccount> Get(Guid accountId)
+        {            
+            var aggregateRoot = _repository.GetById<BankAccount>(accountId);
+
+            return aggregateRoot;
         }
     }
 }

@@ -1,4 +1,6 @@
+using System.IO.IsolatedStorage;
 using System.Text.Json;
+using EventSource.Commands;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventSource.Controllers
@@ -7,50 +9,34 @@ namespace EventSource.Controllers
     [Route("[controller]")]
     public class BankAccountController : ControllerBase
     {
-
+        private readonly IStorage _storage;
         private readonly ILogger<BankAccountController> _logger;
 
-        public BankAccountController(ILogger<BankAccountController> logger)
+        public BankAccountController(ILogger<BankAccountController> logger, IStorage storage)
         {
             _logger = logger;
+            _storage = storage;
         }
 
-        [HttpGet(Name = "GetBalance")]
-        public async Task<BankAccount> GetAccountDetails()
+        [HttpGet]
+        public async Task<BankAccount> Get(Guid accountId)
         {
-            return await Storage.Get() ?? throw new Exception("Account not found");
+            return await _storage.Get(accountId);
         }
 
-        [HttpPost(Name = "CreateAccount")]
-        public async Task<CreatedResult> CreateAccount(string accountOwner)
+        [HttpPost]
+        public async Task<Guid> CreateAccount()
         {
-            var account = new BankAccount
-            {
-                Balance = 0,
-                LastLogin = DateTime.Now.AddDays(-3),
-                AccountOwner = accountOwner
-            };
-
-            await Storage.Save(account);
-            return Created();
+            var accountId = Guid.NewGuid();
+            await _storage.Handle(new CreateAccountCommand(accountId));
+            return accountId;
         }
 
-        [HttpPost("/withdraw", Name = "Withdraw")]
-        public async Task<BankAccount> WithdrawAsync(int amount)
+        [HttpPost("{accountId}/credit", Name = "Credit")]
+        public async Task<BankAccount> CreditAsync(Guid accountId, int amount)
         {
-            var account = await Storage.Get() ?? throw new Exception("Account not found");
-            account.Balance -= amount;
-            await Storage.Save(account);
-            return account;
-        }
-
-        [HttpPost("/credit", Name = "Credit")]
-        public async Task<BankAccount> CreditAsync(int amount)
-        {
-            var account = await Storage.Get() ?? throw new Exception("Account not found");
-            account.Balance += amount;
-            await Storage.Save(account);
-            return account;
-        }
+           await  _storage.Handle(new CreditAccountCommand { Id = accountId, Amount = amount });
+           return await Get(accountId);
+        }        
     }
 }

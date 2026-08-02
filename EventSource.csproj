@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="NEventStore" Version="9.1.1" />
+    <PackageReference Include="NEventStore.Domain" Version="9.1.1" />
+    <PackageReference Include="NEventStore.Persistence.Sql" Version="9.2.0" />
+    <PackageReference Include="NEventStore.Serialization.Json" Version="9.1.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
